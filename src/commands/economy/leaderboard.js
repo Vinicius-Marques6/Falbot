@@ -1,5 +1,6 @@
 const { ButtonBuilder, SlashCommandBuilder } = require('discord.js');
 const { format, paginate, getItem } = require('../../utils/functions.js');
+const User = require('../../schemas/user-schema.js');
 
 async function getMember(guild, member_id) {
 	try {
@@ -230,13 +231,27 @@ module.exports = {
 			}
 
 			if (scope === 'server') {
-				users = await instance.userSchema.find({}).sort({ [type]: -1 });
+				const members = await guild.members.fetch(); // Fetch em vez de cache para pegar todos os membros do servidor
+				const memberArray = members
+					.filter((member) => {
+						if (!member.user.bot) return true; // Filtra os bots
+					})
+					.map((member) => {
+						return member.user.id; // Retorna apenas o id de cada membro do servidor
+					});
 
-				for (useri of users) {
-					if (await getMember(guild, useri['_id'])) {
-						rank.push(useri);
-					}
-				}
+				console.log(memberArray);
+
+				user = await User.find({ _id: { $in: memberArray } }).sort({ falcoins: -1 }); // Pega os usuários do servidor e ordena por falcoins
+				console.log(user);
+				//users = await instance.userSchema.find({}).sort({ [type]: -1 });
+
+				rank = user;
+				// for (useri of users) {
+				// 	if (await getMember(guild, useri['_id'])) {
+				// 		rank.push(useri);
+				// 	}
+				// }
 			} else {
 				rank = await instance.userSchema
 					.find({})
